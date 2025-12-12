@@ -14,16 +14,191 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      cameras: {
+        Row: {
+          created_at: string
+          detection_modes:
+            | Database["public"]["Enums"]["detection_type"][]
+            | null
+          id: string
+          is_enabled: boolean
+          location: string
+          name: string
+          status: Database["public"]["Enums"]["camera_status"]
+          stream_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          detection_modes?:
+            | Database["public"]["Enums"]["detection_type"][]
+            | null
+          id?: string
+          is_enabled?: boolean
+          location: string
+          name: string
+          status?: Database["public"]["Enums"]["camera_status"]
+          stream_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          detection_modes?:
+            | Database["public"]["Enums"]["detection_type"][]
+            | null
+          id?: string
+          is_enabled?: boolean
+          location?: string
+          name?: string
+          status?: Database["public"]["Enums"]["camera_status"]
+          stream_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      detection_logs: {
+        Row: {
+          camera_id: string
+          confidence: number
+          created_at: string
+          detection_type: Database["public"]["Enums"]["detection_type"]
+          id: string
+          metadata: Json | null
+          snapshot_url: string | null
+        }
+        Insert: {
+          camera_id: string
+          confidence: number
+          created_at?: string
+          detection_type: Database["public"]["Enums"]["detection_type"]
+          id?: string
+          metadata?: Json | null
+          snapshot_url?: string | null
+        }
+        Update: {
+          camera_id?: string
+          confidence?: number
+          created_at?: string
+          detection_type?: Database["public"]["Enums"]["detection_type"]
+          id?: string
+          metadata?: Json | null
+          snapshot_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detection_logs_camera_id_fkey"
+            columns: ["camera_id"]
+            isOneToOne: false
+            referencedRelation: "cameras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "employee" | "customer"
+      camera_status: "online" | "offline" | "maintenance"
+      detection_type:
+        | "face_recognition"
+        | "person_counting"
+        | "suspicious_behavior"
+        | "theft_alert"
+        | "crowd_density"
+        | "vip_recognition"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +325,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "employee", "customer"],
+      camera_status: ["online", "offline", "maintenance"],
+      detection_type: [
+        "face_recognition",
+        "person_counting",
+        "suspicious_behavior",
+        "theft_alert",
+        "crowd_density",
+        "vip_recognition",
+      ],
+    },
   },
 } as const
