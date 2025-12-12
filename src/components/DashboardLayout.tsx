@@ -173,13 +173,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           {user?.role === 'admin' && (
             <div className="hidden md:flex items-center gap-2">
               <Link to="/admin/cameras">
-                <Button variant="dark" size="sm" className="gap-2">
+                <Button variant="gold" size="sm" className="gap-2">
                   <Camera className="w-4 h-4" />
                   <span className="hidden lg:inline">Camera Management</span>
                 </Button>
               </Link>
               <Link to="/admin/detection">
-                <Button variant="dark" size="sm" className="gap-2">
+                <Button variant="gold" size="sm" className="gap-2">
                   <Brain className="w-4 h-4" />
                   <span className="hidden lg:inline">Detection Settings</span>
                 </Button>
@@ -263,13 +263,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               {user?.role === 'admin' && (
                 <div className="mt-6 space-y-2">
                   <Link to="/admin/cameras" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="dark" className="w-full justify-start gap-2">
+                    <Button variant="gold" className="w-full justify-start gap-2">
                       <Camera className="w-4 h-4" />
                       Camera Management
                     </Button>
                   </Link>
                   <Link to="/admin/detection" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="dark" className="w-full justify-start gap-2">
+                    <Button variant="gold" className="w-full justify-start gap-2">
                       <Brain className="w-4 h-4" />
                       Detection Settings
                     </Button>
