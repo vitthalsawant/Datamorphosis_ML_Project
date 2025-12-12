@@ -60,8 +60,7 @@
     --sidebar-ring: 43 74% 53%;
   }
 
-  .dark,
-  .theme-admin {
+  .dark {
     --background: 0 0% 4%;
     --foreground: 0 0% 95%;
     
@@ -98,42 +97,6 @@
     --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-border: 0 0% 15%;
     --sidebar-ring: 43 74% 53%;
-  }
-
-  .theme-employee {
-    --background: 213 52% 8%;
-    --foreground: 0 0% 95%;
-    
-    --card: 213 52% 12%;
-    --card-foreground: 0 0% 95%;
-    
-    --popover: 213 52% 12%;
-    --popover-foreground: 0 0% 95%;
-    
-    --primary: 0 0% 75%;
-    --primary-foreground: 213 52% 10%;
-    
-    --secondary: 213 52% 18%;
-    --secondary-foreground: 0 0% 90%;
-    
-    --muted: 213 52% 15%;
-    --muted-foreground: 0 0% 60%;
-    
-    --accent: 192 70% 50%;
-    --accent-foreground: 0 0% 100%;
-    
-    --border: 213 30% 20%;
-    --input: 213 30% 20%;
-    --ring: 0 0% 75%;
-    
-    --sidebar-background: 213 52% 10%;
-    --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 0 0% 75%;
-    --sidebar-primary-foreground: 213 52% 10%;
-    --sidebar-accent: 213 52% 18%;
-    --sidebar-accent-foreground: 0 0% 90%;
-    --sidebar-border: 213 30% 20%;
-    --sidebar-ring: 0 0% 75%;
   }
 }
 

@@ -50,16 +50,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     navigate('/');
   };
 
-  const getThemeClass = () => {
-    switch (user?.role) {
-      case 'admin':
-        return 'theme-admin';
-      case 'employee':
-        return 'theme-employee';
-      default:
-        return '';
-    }
-  };
+  // All dashboards now use the same customer theme (cream/gold)
+  const getThemeClass = () => '';
+
 
   const getNavItems = () => {
     const baseItems = [
