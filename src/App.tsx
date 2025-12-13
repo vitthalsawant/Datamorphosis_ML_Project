@@ -8,6 +8,7 @@ import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminRequests from "./pages/AdminRequests";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import CompanyDashboard from "./pages/CompanyDashboard";
 import CameraManagement from "./pages/CameraManagement";
@@ -94,6 +95,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <AdminDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/requests" 
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminRequests />
           </ProtectedRoute>
         } 
       />

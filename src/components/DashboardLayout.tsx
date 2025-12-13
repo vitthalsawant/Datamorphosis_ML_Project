@@ -24,7 +24,8 @@ import {
   BarChart3,
   Shield,
   FileText,
-  Activity
+  Activity,
+  UserPlus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -64,20 +65,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       case 'admin':
         return [
           ...baseItems,
+          { icon: UserPlus, label: 'Requests', path: '/admin/requests' },
           { icon: Users, label: 'User Management', path: '/admin/users' },
           { icon: Package, label: 'Inventory', path: '/admin/inventory' },
           { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
           { icon: FileText, label: 'Reports', path: '/admin/reports' },
           { icon: Settings, label: 'Settings', path: '/admin/settings' },
-        ];
-      case 'employee':
-        return [
-          ...baseItems,
-          { icon: ClipboardList, label: 'Tasks', path: '/employee/tasks' },
-          { icon: Users, label: 'Customers', path: '/employee/customers' },
-          { icon: Package, label: 'Inventory', path: '/employee/inventory' },
-          { icon: Calendar, label: 'Schedule', path: '/employee/schedule' },
-          { icon: MessageSquare, label: 'Messages', path: '/employee/messages' },
         ];
       case 'customer':
         return [

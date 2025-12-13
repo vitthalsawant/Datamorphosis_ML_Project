@@ -183,6 +183,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_approved: boolean
           phone: string | null
           updated_at: string
           user_id: string
@@ -194,6 +195,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          is_approved?: boolean
           phone?: string | null
           updated_at?: string
           user_id: string
@@ -205,6 +207,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          is_approved?: boolean
           phone?: string | null
           updated_at?: string
           user_id?: string
@@ -256,6 +259,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_user_approved: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "employee" | "customer"
