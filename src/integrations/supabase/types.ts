@@ -40,6 +40,7 @@ export type Database = {
       }
       cameras: {
         Row: {
+          company_id: string | null
           created_at: string
           detection_modes:
             | Database["public"]["Enums"]["detection_type"][]
@@ -53,6 +54,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           detection_modes?:
             | Database["public"]["Enums"]["detection_type"][]
@@ -66,6 +68,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           detection_modes?:
             | Database["public"]["Enums"]["detection_type"][]
@@ -78,11 +81,56 @@ export type Database = {
           stream_url?: string | null
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "cameras_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      companies: {
+        Row: {
+          address: string | null
+          contact_email: string
+          contact_phone: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_email: string
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_email?: string
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          updated_at?: string
+        }
         Relationships: []
       }
       detection_logs: {
         Row: {
           camera_id: string
+          company_id: string | null
           confidence: number
           created_at: string
           detection_type: Database["public"]["Enums"]["detection_type"]
@@ -92,6 +140,7 @@ export type Database = {
         }
         Insert: {
           camera_id: string
+          company_id?: string | null
           confidence: number
           created_at?: string
           detection_type: Database["public"]["Enums"]["detection_type"]
@@ -101,6 +150,7 @@ export type Database = {
         }
         Update: {
           camera_id?: string
+          company_id?: string | null
           confidence?: number
           created_at?: string
           detection_type?: Database["public"]["Enums"]["detection_type"]
@@ -116,11 +166,19 @@ export type Database = {
             referencedRelation: "cameras"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "detection_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
         Row: {
           avatar_url: string | null
+          company_id: string | null
           created_at: string
           email: string
           full_name: string
@@ -131,6 +189,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          company_id?: string | null
           created_at?: string
           email: string
           full_name: string
@@ -141,6 +200,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          company_id?: string | null
           created_at?: string
           email?: string
           full_name?: string
@@ -149,7 +209,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
