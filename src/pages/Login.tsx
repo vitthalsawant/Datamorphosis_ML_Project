@@ -90,7 +90,6 @@ const Login: React.FC = () => {
             <h3 className="text-sm font-medium text-primary mb-3">Demo Credentials</h3>
             <div className="space-y-2 text-sm text-muted-foreground/70">
               <p><span className="text-primary-foreground">Admin:</span> admin@datamorphosis.in</p>
-              <p><span className="text-primary-foreground">Employee:</span> employee@datamorphosis.in</p>
               <p><span className="text-primary-foreground">Customer:</span> customer@datamorphosis.in</p>
               <p className="mt-2 text-xs">Password: password123</p>
             </div>
@@ -193,7 +192,7 @@ const Login: React.FC = () => {
           <div className="lg:hidden mt-8 p-4 rounded-xl bg-secondary/50 border border-border">
             <h3 className="text-sm font-medium text-primary mb-2">Demo Credentials</h3>
             <p className="text-xs text-muted-foreground">
-              Admin: admin@datamorphosis.in | Employee: employee@datamorphosis.in | Customer: customer@datamorphosis.in
+              Admin: admin@datamorphosis.in | Customer: customer@datamorphosis.in
             </p>
             <p className="text-xs text-muted-foreground mt-1">Password: password123</p>
           </div>

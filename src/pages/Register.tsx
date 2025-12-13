@@ -177,9 +177,8 @@ const Register: React.FC = () => {
                   <SelectValue placeholder="Choose your role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="customer">Customer</SelectItem>
-                  <SelectItem value="employee">Employee</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="customer">Customer (Company)</SelectItem>
+                  <SelectItem value="admin">Admin (Datamorphosis)</SelectItem>
                 </SelectContent>
               </Select>
               {errors.role && <p className="text-sm text-destructive">{errors.role}</p>}

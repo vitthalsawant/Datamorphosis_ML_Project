@@ -23,19 +23,11 @@ const MOCK_USERS: User[] = [
   },
   {
     id: '2',
-    fullName: 'Rajesh Kumar',
-    email: 'employee@datamorphosis.in',
-    phone: '+91 9876543211',
-    role: 'employee',
-    createdAt: new Date('2024-02-15'),
-  },
-  {
-    id: '3',
-    fullName: 'Priya Sharma',
+    fullName: 'Ranka Jewellers',
     email: 'customer@datamorphosis.in',
-    phone: '+91 9876543212',
+    phone: '+91 9876543211',
     role: 'customer',
-    createdAt: new Date('2024-03-20'),
+    createdAt: new Date('2024-02-15'),
   },
 ];
 

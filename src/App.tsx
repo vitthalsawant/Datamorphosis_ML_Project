@@ -9,7 +9,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
 import CustomerDashboard from "./pages/CustomerDashboard";
-import EmployeeDashboard from "./pages/EmployeeDashboard";
+import CompanyDashboard from "./pages/CompanyDashboard";
 import CameraManagement from "./pages/CameraManagement";
 import DetectionSettings from "./pages/DetectionSettings";
 import NotFound from "./pages/NotFound";
@@ -37,12 +37,8 @@ const ProtectedRoute: React.FC<{
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
     // Redirect to appropriate dashboard based on role
-    const redirectPath = {
-      admin: '/admin',
-      employee: '/employee',
-      customer: '/customer',
-    }[user.role];
-    return <Navigate to={redirectPath || '/'} replace />;
+    const redirectPath = user.role === 'admin' ? '/admin' : '/customer';
+    return <Navigate to={redirectPath} replace />;
   }
 
   return <>{children}</>;
@@ -61,12 +57,8 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }
 
   if (isAuthenticated && user) {
-    const redirectPath = {
-      admin: '/admin',
-      employee: '/employee',
-      customer: '/customer',
-    }[user.role];
-    return <Navigate to={redirectPath || '/'} replace />;
+    const redirectPath = user.role === 'admin' ? '/admin' : '/customer';
+    return <Navigate to={redirectPath} replace />;
   }
 
   return <>{children}</>;
@@ -104,6 +96,22 @@ const AppRoutes = () => {
         } 
       />
       <Route 
+        path="/admin/company/:companyId" 
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <CompanyDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/company/:companyId/cameras" 
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <CameraManagement />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/admin/cameras" 
         element={
           <ProtectedRoute allowedRoles={['admin']}>
@@ -120,22 +128,28 @@ const AppRoutes = () => {
         } 
       />
 
-      {/* Employee Routes */}
-      <Route 
-        path="/employee" 
-        element={
-          <ProtectedRoute allowedRoles={['employee']}>
-            <EmployeeDashboard />
-          </ProtectedRoute>
-        } 
-      />
-
       {/* Customer Routes */}
       <Route 
         path="/customer" 
         element={
           <ProtectedRoute allowedRoles={['customer']}>
             <CustomerDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/customer/cameras" 
+        element={
+          <ProtectedRoute allowedRoles={['customer']}>
+            <CameraManagement />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/customer/detection" 
+        element={
+          <ProtectedRoute allowedRoles={['customer']}>
+            <DetectionSettings />
           </ProtectedRoute>
         } 
       />
