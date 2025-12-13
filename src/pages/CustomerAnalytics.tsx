@@ -1,8 +1,11 @@
 import React from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserCheck, User, TrendingUp, Clock, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, UserCheck, User, TrendingUp, Clock, Calendar, Download, FileText } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
+import { useAnalyticsExport } from '@/hooks/useAnalyticsExport';
+import { toast } from 'sonner';
 
 // Mock analytics data
 const VISITOR_DATA = {
@@ -51,13 +54,47 @@ const AGE_DISTRIBUTION = [
 ];
 
 const CustomerAnalytics: React.FC = () => {
+  const { exportToCSV, exportToPDF } = useAnalyticsExport();
+
+  const handleExportCSV = () => {
+    exportToCSV({
+      visitorData: VISITOR_DATA,
+      hourlyVisitors: HOURLY_VISITORS,
+      weeklyVisitors: WEEKLY_VISITORS,
+      ageDistribution: AGE_DISTRIBUTION,
+    });
+    toast.success('CSV report downloaded successfully');
+  };
+
+  const handleExportPDF = () => {
+    exportToPDF({
+      visitorData: VISITOR_DATA,
+      hourlyVisitors: HOURLY_VISITORS,
+      weeklyVisitors: WEEKLY_VISITORS,
+      ageDistribution: AGE_DISTRIBUTION,
+    });
+    toast.success('PDF report downloaded successfully');
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="font-display text-3xl font-bold">Analytics</h1>
-          <p className="text-muted-foreground">Visitor insights and counting statistics</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="font-display text-3xl font-bold">Analytics</h1>
+            <p className="text-muted-foreground">Visitor insights and counting statistics</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExportCSV} className="gap-2">
+              <Download className="w-4 h-4" />
+              Export CSV
+            </Button>
+            <Button onClick={handleExportPDF} className="gap-2">
+              <FileText className="w-4 h-4" />
+              Export PDF
+            </Button>
+          </div>
         </div>
 
         {/* Quick Stats */}
