@@ -85,12 +85,12 @@ const Register: React.FC = () => {
     });
     
     if (success) {
-      const redirectPath = {
-        admin: '/admin',
-        employee: '/employee',
-        customer: '/customer',
-      }[formData.role as UserRole];
-      navigate(redirectPath);
+      // For customers, redirect to login since they need approval
+      // For admins, they are auto-approved and will be redirected via auth state
+      if (formData.role === 'customer') {
+        navigate('/login');
+      }
+      // Admin auto-redirect is handled by PublicRoute
     }
   };
 

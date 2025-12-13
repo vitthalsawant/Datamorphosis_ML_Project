@@ -48,17 +48,7 @@ const Login: React.FC = () => {
     });
     
     if (success) {
-      // Redirect based on role (handled by the login function's toast and context update)
-      const storedUser = localStorage.getItem('datamorphosis_user') || sessionStorage.getItem('datamorphosis_user');
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        const redirectPath = {
-          admin: '/admin',
-          employee: '/employee',
-          customer: '/customer',
-        }[user.role as string];
-        navigate(redirectPath || '/');
-      }
+      // Navigation is handled by auth state change and PublicRoute redirect
     }
   };
 
@@ -85,13 +75,11 @@ const Login: React.FC = () => {
             with Datamorphosis.
           </p>
           
-          {/* Demo Credentials */}
+          {/* Info Notice */}
           <div className="mt-12 p-6 rounded-xl bg-background/5 border border-border/20 text-left">
-            <h3 className="text-sm font-medium text-primary mb-3">Demo Credentials</h3>
+            <h3 className="text-sm font-medium text-primary mb-3">New Customer?</h3>
             <div className="space-y-2 text-sm text-muted-foreground/70">
-              <p><span className="text-primary-foreground">Admin:</span> admin@datamorphosis.in</p>
-              <p><span className="text-primary-foreground">Customer:</span> customer@datamorphosis.in</p>
-              <p className="mt-2 text-xs">Password: password123</p>
+              <p>Register for an account and wait for admin approval to access your dashboard.</p>
             </div>
           </div>
         </div>
@@ -188,13 +176,12 @@ const Login: React.FC = () => {
             </Link>
           </p>
 
-          {/* Mobile Demo Credentials */}
+          {/* Mobile Info Notice */}
           <div className="lg:hidden mt-8 p-4 rounded-xl bg-secondary/50 border border-border">
-            <h3 className="text-sm font-medium text-primary mb-2">Demo Credentials</h3>
+            <h3 className="text-sm font-medium text-primary mb-2">New Customer?</h3>
             <p className="text-xs text-muted-foreground">
-              Admin: admin@datamorphosis.in | Customer: customer@datamorphosis.in
+              Register and wait for admin approval to access your dashboard.
             </p>
-            <p className="text-xs text-muted-foreground mt-1">Password: password123</p>
           </div>
         </div>
       </div>
