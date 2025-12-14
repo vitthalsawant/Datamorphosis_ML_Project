@@ -1,4 +1,4 @@
-export type UserRole = 'customer' | 'employee' | 'admin';
+export type UserRole = 'customer' | 'admin';
 
 export interface User {
   id: string;
@@ -6,7 +6,9 @@ export interface User {
   email: string;
   phone: string;
   role: UserRole;
-  createdAt: Date;
+  companyId?: string;
+  isApproved: boolean;
+  createdAt?: Date;
   lastLogin?: Date;
 }
 
@@ -19,7 +21,6 @@ export interface AuthState {
 export interface LoginCredentials {
   email: string;
   password: string;
-  rememberMe?: boolean;
 }
 
 export interface RegisterData {
@@ -28,6 +29,5 @@ export interface RegisterData {
   phone: string;
   role: UserRole;
   password: string;
-  confirmPassword: string;
-  acceptTerms: boolean;
+  companyName?: string;
 }
