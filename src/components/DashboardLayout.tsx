@@ -64,8 +64,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       case 'admin':
         return [
           ...baseItems,
-          { icon: Shield, label: 'Requests', path: '/admin/requests' },
           { icon: Users, label: 'User Management', path: '/admin/users' },
+          { icon: Package, label: 'Inventory', path: '/admin/inventory' },
           { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
           { icon: FileText, label: 'Reports', path: '/admin/reports' },
           { icon: Settings, label: 'Settings', path: '/admin/settings' },
