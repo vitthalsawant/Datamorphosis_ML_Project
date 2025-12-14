@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataMorphosisLogo } from '@/components/DataMorphosisLogo';
 import { useAuth } from '@/contexts/AuthContext';
-import { Eye, EyeOff, User, Mail, Phone, Shield, Loader2, Building2 } from 'lucide-react';
+import { UserRole } from '@/types/auth';
+import { Eye, EyeOff, User, Mail, Phone, Shield, Loader2 } from 'lucide-react';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -14,9 +16,9 @@ const Register: React.FC = () => {
   
   const [formData, setFormData] = useState({
     fullName: '',
-    companyName: '',
     email: '',
     phone: '',
+    role: '' as UserRole | '',
     password: '',
     confirmPassword: '',
     acceptTerms: false,
@@ -32,10 +34,6 @@ const Register: React.FC = () => {
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required';
     }
-
-    if (!formData.companyName.trim()) {
-      newErrors.companyName = 'Company name is required';
-    }
     
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
@@ -47,6 +45,10 @@ const Register: React.FC = () => {
       newErrors.phone = 'Phone number is required';
     } else if (!/^\+?[\d\s-]{10,}$/.test(formData.phone)) {
       newErrors.phone = 'Please enter a valid phone number';
+    }
+    
+    if (!formData.role) {
+      newErrors.role = 'Please select a role';
     }
     
     if (!formData.password) {
@@ -76,13 +78,19 @@ const Register: React.FC = () => {
       fullName: formData.fullName,
       email: formData.email,
       phone: formData.phone,
-      role: 'customer',
+      role: formData.role as UserRole,
       password: formData.password,
-      companyName: formData.companyName,
+      confirmPassword: formData.confirmPassword,
+      acceptTerms: formData.acceptTerms,
     });
     
     if (success) {
-      navigate('/login');
+      const redirectPath = {
+        admin: '/admin',
+        employee: '/employee',
+        customer: '/customer',
+      }[formData.role as UserRole];
+      navigate(redirectPath);
     }
   };
 
@@ -103,30 +111,14 @@ const Register: React.FC = () => {
           </Link>
           
           <div className="mb-8">
-            <h1 className="font-display text-3xl font-bold mb-2">Register Your Company</h1>
-            <p className="text-muted-foreground">Join the Datamorphosis security platform</p>
+            <h1 className="font-display text-3xl font-bold mb-2">Create Account</h1>
+            <p className="text-muted-foreground">Join the Datamorphosis platform</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Company Name */}
-            <div className="space-y-2">
-              <Label htmlFor="companyName">Company Name</Label>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="companyName"
-                  placeholder="Enter your company name"
-                  className="pl-11"
-                  value={formData.companyName}
-                  onChange={(e) => handleInputChange('companyName', e.target.value)}
-                />
-              </div>
-              {errors.companyName && <p className="text-sm text-destructive">{errors.companyName}</p>}
-            </div>
-
             {/* Full Name */}
             <div className="space-y-2">
-              <Label htmlFor="fullName">Contact Person Name</Label>
+              <Label htmlFor="fullName">Full Name</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -148,7 +140,7 @@ const Register: React.FC = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="name@company.com"
+                  placeholder="name@example.com"
                   className="pl-11"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
@@ -171,6 +163,25 @@ const Register: React.FC = () => {
                 />
               </div>
               {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
+            </div>
+
+            {/* Role */}
+            <div className="space-y-2">
+              <Label>Select Role</Label>
+              <Select
+                value={formData.role}
+                onValueChange={(value) => handleInputChange('role', value)}
+              >
+                <SelectTrigger className="h-11">
+                  <Shield className="w-5 h-5 text-muted-foreground mr-2" />
+                  <SelectValue placeholder="Choose your role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="customer">Customer (Company)</SelectItem>
+                  <SelectItem value="admin">Admin (Datamorphosis)</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.role && <p className="text-sm text-destructive">{errors.role}</p>}
             </div>
 
             {/* Password */}
@@ -238,7 +249,7 @@ const Register: React.FC = () => {
                   Creating Account...
                 </>
               ) : (
-                'Register Company'
+                'Create Account'
               )}
             </Button>
           </form>
@@ -248,10 +259,6 @@ const Register: React.FC = () => {
             <Link to="/login" className="text-primary hover:underline font-medium">
               Sign in
             </Link>
-          </p>
-
-          <p className="text-center text-xs text-muted-foreground mt-4">
-            Note: Your registration will be reviewed by our team before approval.
           </p>
         </div>
       </div>
@@ -263,11 +270,11 @@ const Register: React.FC = () => {
             <Shield className="w-12 h-12 text-background" />
           </div>
           <h2 className="font-display text-3xl font-bold text-primary-foreground mb-4">
-            Enterprise Security
+            Secure & Trusted
           </h2>
           <p className="text-muted-foreground/80">
-            Register your company to access advanced AI-powered security monitoring, 
-            analytics, and real-time threat detection.
+            Your data is protected with enterprise-grade security. 
+            Join leading enterprises using the Datamorphosis platform.
           </p>
         </div>
       </div>

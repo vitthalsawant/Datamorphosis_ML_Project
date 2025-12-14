@@ -1,34 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DataMorphosisLogo } from '@/components/DataMorphosisLogo';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, Mail, Lock, Loader2, Brain } from 'lucide-react';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isLoading, user, isAuthenticated } = useAuth();
+  const { login, isLoading } = useAuth();
   
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    rememberMe: false,
   });
   
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      if (!user.isApproved && user.role === 'customer') {
-        // Don't redirect if not approved
-        return;
-      }
-      const redirectPath = user.role === 'admin' ? '/admin' : '/customer';
-      navigate(redirectPath, { replace: true });
-    }
-  }, [isAuthenticated, user, navigate]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -50,52 +41,33 @@ const Login: React.FC = () => {
     
     if (!validateForm()) return;
     
-    await login({
+    const success = await login({
       email: formData.email,
       password: formData.password,
+      rememberMe: formData.rememberMe,
     });
+    
+    if (success) {
+      // Redirect based on role (handled by the login function's toast and context update)
+      const storedUser = localStorage.getItem('datamorphosis_user') || sessionStorage.getItem('datamorphosis_user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        const redirectPath = {
+          admin: '/admin',
+          employee: '/employee',
+          customer: '/customer',
+        }[user.role as string];
+        navigate(redirectPath || '/');
+      }
+    }
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
-
-  const { logout } = useAuth();
-
-  // Show pending approval message
-  if (isAuthenticated && user && !user.isApproved && user.role === 'customer') {
-    const handleSignOut = async () => {
-      await logout();
-      navigate('/login');
-    };
-
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 flex items-center justify-center p-8">
-        <div className="w-full max-w-md text-center animate-fade-in">
-          <DataMorphosisLogo variant="color" className="mx-auto mb-8" />
-          <div className="p-8 rounded-2xl bg-secondary/30 border border-border">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-amber-500/20 flex items-center justify-center">
-              <Lock className="w-8 h-8 text-amber-500" />
-            </div>
-            <h2 className="font-display text-2xl font-bold mb-4">Pending Approval</h2>
-            <p className="text-muted-foreground mb-6">
-              Your account is awaiting approval from the Datamorphosis team. 
-              You'll receive an email once your account is activated.
-            </p>
-            <Button variant="outline" onClick={() => navigate('/')} className="mr-2">
-              Go Home
-            </Button>
-            <Button variant="gold" onClick={handleSignOut}>
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 flex">
@@ -113,12 +85,13 @@ const Login: React.FC = () => {
             with Datamorphosis.
           </p>
           
-          {/* Admin Demo Credentials */}
+          {/* Demo Credentials */}
           <div className="mt-12 p-6 rounded-xl bg-background/5 border border-border/20 text-left">
-            <h3 className="text-sm font-medium text-primary mb-3">Admin Demo</h3>
+            <h3 className="text-sm font-medium text-primary mb-3">Demo Credentials</h3>
             <div className="space-y-2 text-sm text-muted-foreground/70">
-              <p><span className="text-primary-foreground">Email:</span> admin@datamorphosis.in</p>
-              <p className="mt-2 text-xs">Contact admin to get credentials</p>
+              <p><span className="text-primary-foreground">Admin:</span> admin@datamorphosis.in</p>
+              <p><span className="text-primary-foreground">Customer:</span> customer@datamorphosis.in</p>
+              <p className="mt-2 text-xs">Password: password123</p>
             </div>
           </div>
         </div>
@@ -183,6 +156,18 @@ const Login: React.FC = () => {
               {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
             </div>
 
+            {/* Remember Me */}
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="remember"
+                checked={formData.rememberMe}
+                onCheckedChange={(checked) => handleInputChange('rememberMe', checked as boolean)}
+              />
+              <Label htmlFor="remember" className="text-sm cursor-pointer">
+                Remember me for 30 days
+              </Label>
+            </div>
+
             {/* Submit */}
             <Button type="submit" variant="gold" size="lg" className="w-full" disabled={isLoading}>
               {isLoading ? (
@@ -199,9 +184,18 @@ const Login: React.FC = () => {
           <p className="text-center text-muted-foreground mt-6">
             Don't have an account?{' '}
             <Link to="/register" className="text-primary hover:underline font-medium">
-              Register your company
+              Create account
             </Link>
           </p>
+
+          {/* Mobile Demo Credentials */}
+          <div className="lg:hidden mt-8 p-4 rounded-xl bg-secondary/50 border border-border">
+            <h3 className="text-sm font-medium text-primary mb-2">Demo Credentials</h3>
+            <p className="text-xs text-muted-foreground">
+              Admin: admin@datamorphosis.in | Customer: customer@datamorphosis.in
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">Password: password123</p>
+          </div>
         </div>
       </div>
     </div>

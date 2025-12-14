@@ -1,33 +1,68 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Building2, Plus, Users, Camera, AlertTriangle, Search, MoreVertical, Eye, Settings, Trash2, Loader2 } from 'lucide-react';
+import { Building2, Plus, Users, Camera, AlertTriangle, Search, MoreVertical, Eye, Settings, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
-interface Company {
-  id: string;
-  name: string;
-  logo_url: string | null;
-  contact_email: string;
-  contact_phone: string | null;
-  address: string | null;
-  is_active: boolean;
-  cameras_count?: number;
-  alerts_today?: number;
-  users_count?: number;
-}
+// Mock data for companies
+const MOCK_COMPANIES = [
+  {
+    id: '1',
+    name: 'Ranka Jewellers',
+    logo_url: null,
+    contact_email: 'admin@ranka.com',
+    contact_phone: '+91 9876543210',
+    address: 'Pune, Maharashtra',
+    is_active: true,
+    cameras_count: 12,
+    alerts_today: 3,
+    users_count: 8,
+  },
+  {
+    id: '2',
+    name: 'Tanishq Store',
+    logo_url: null,
+    contact_email: 'security@tanishq.com',
+    contact_phone: '+91 9876543211',
+    address: 'Mumbai, Maharashtra',
+    is_active: true,
+    cameras_count: 24,
+    alerts_today: 7,
+    users_count: 15,
+  },
+  {
+    id: '3',
+    name: 'Kalyan Jewellers',
+    logo_url: null,
+    contact_email: 'admin@kalyan.com',
+    contact_phone: '+91 9876543212',
+    address: 'Chennai, Tamil Nadu',
+    is_active: true,
+    cameras_count: 18,
+    alerts_today: 2,
+    users_count: 12,
+  },
+  {
+    id: '4',
+    name: 'Malabar Gold',
+    logo_url: null,
+    contact_email: 'security@malabar.com',
+    contact_phone: '+91 9876543213',
+    address: 'Kochi, Kerala',
+    is_active: false,
+    cameras_count: 8,
+    alerts_today: 0,
+    users_count: 5,
+  },
+];
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newCompany, setNewCompany] = useState({
@@ -37,117 +72,24 @@ const AdminDashboard: React.FC = () => {
     address: '',
   });
 
-  const fetchCompanies = async () => {
-    try {
-      setLoading(true);
-      
-      const { data: companiesData, error } = await supabase
-        .from('companies')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Get counts for each company
-      const companiesWithCounts = await Promise.all(
-        (companiesData || []).map(async (company) => {
-          const [camerasResult, usersResult] = await Promise.all([
-            supabase
-              .from('cameras')
-              .select('id', { count: 'exact', head: true })
-              .eq('company_id', company.id),
-            supabase
-              .from('profiles')
-              .select('id', { count: 'exact', head: true })
-              .eq('company_id', company.id),
-          ]);
-
-          return {
-            ...company,
-            cameras_count: camerasResult.count || 0,
-            users_count: usersResult.count || 0,
-            alerts_today: 0, // TODO: Calculate from detection_logs
-          };
-        })
-      );
-
-      setCompanies(companiesWithCounts);
-    } catch (error: any) {
-      console.error('Error fetching companies:', error);
-      toast.error('Failed to load companies');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCompanies();
-  }, []);
-
-  const filteredCompanies = companies.filter(company =>
+  const filteredCompanies = MOCK_COMPANIES.filter(company =>
     company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     company.contact_email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const totalCameras = companies.reduce((sum, c) => sum + (c.cameras_count || 0), 0);
-  const totalAlerts = companies.reduce((sum, c) => sum + (c.alerts_today || 0), 0);
-  const activeCompanies = companies.filter(c => c.is_active).length;
-  const totalUsers = companies.reduce((sum, c) => sum + (c.users_count || 0), 0);
+  const totalCameras = MOCK_COMPANIES.reduce((sum, c) => sum + c.cameras_count, 0);
+  const totalAlerts = MOCK_COMPANIES.reduce((sum, c) => sum + c.alerts_today, 0);
+  const activeCompanies = MOCK_COMPANIES.filter(c => c.is_active).length;
 
-  const handleAddCompany = async () => {
-    try {
-      const { error } = await supabase
-        .from('companies')
-        .insert({
-          name: newCompany.name,
-          contact_email: newCompany.contact_email,
-          contact_phone: newCompany.contact_phone || null,
-          address: newCompany.address || null,
-        });
-
-      if (error) throw error;
-
-      toast.success('Company added successfully');
-      setIsAddDialogOpen(false);
-      setNewCompany({ name: '', contact_email: '', contact_phone: '', address: '' });
-      fetchCompanies();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to add company');
-    }
-  };
-
-  const handleDeleteCompany = async (companyId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this company?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('companies')
-        .delete()
-        .eq('id', companyId);
-
-      if (error) throw error;
-
-      toast.success('Company deleted');
-      fetchCompanies();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete company');
-    }
+  const handleAddCompany = () => {
+    console.log('Adding company:', newCompany);
+    setIsAddDialogOpen(false);
+    setNewCompany({ name: '', contact_email: '', contact_phone: '', address: '' });
   };
 
   const handleViewCompany = (companyId: string) => {
     navigate(`/admin/company/${companyId}`);
   };
-
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      </DashboardLayout>
-    );
-  }
 
   return (
     <DashboardLayout>
@@ -263,7 +205,7 @@ const AdminDashboard: React.FC = () => {
                   <Users className="w-5 h-5 text-green-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{totalUsers}</p>
+                  <p className="text-2xl font-bold">{MOCK_COMPANIES.reduce((sum, c) => sum + c.users_count, 0)}</p>
                   <p className="text-xs text-muted-foreground">Total Users</p>
                 </div>
               </div>
@@ -283,89 +225,72 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Company Cards Grid */}
-        {filteredCompanies.length === 0 ? (
-          <div className="text-center py-12">
-            <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No companies yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Companies will appear here when they register or when you add them.
-            </p>
-            <Button variant="gold" onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add First Company
-            </Button>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCompanies.map((company) => (
-              <Card 
-                key={company.id} 
-                className={`glass-card hover-lift cursor-pointer transition-all ${!company.is_active ? 'opacity-60' : ''}`}
-                onClick={() => handleViewCompany(company.id)}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl gold-gradient flex items-center justify-center text-background font-bold text-lg">
-                        {company.name.charAt(0)}
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{company.name}</CardTitle>
-                        <p className="text-xs text-muted-foreground">{company.address || 'No address'}</p>
-                      </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCompanies.map((company) => (
+            <Card 
+              key={company.id} 
+              className={`glass-card hover-lift cursor-pointer transition-all ${!company.is_active ? 'opacity-60' : ''}`}
+              onClick={() => handleViewCompany(company.id)}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl gold-gradient flex items-center justify-center text-background font-bold text-lg">
+                      {company.name.charAt(0)}
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewCompany(company.id); }}>
-                          <Eye className="w-4 h-4 mr-2" />
-                          View Dashboard
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                          <Settings className="w-4 h-4 mr-2" />
-                          Settings
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-destructive" 
-                          onClick={(e) => handleDeleteCompany(company.id, e)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div className="text-center p-2 rounded-lg bg-secondary/50">
-                      <p className="text-lg font-bold">{company.cameras_count || 0}</p>
-                      <p className="text-xs text-muted-foreground">Cameras</p>
-                    </div>
-                    <div className="text-center p-2 rounded-lg bg-secondary/50">
-                      <p className="text-lg font-bold">{company.alerts_today || 0}</p>
-                      <p className="text-xs text-muted-foreground">Alerts</p>
-                    </div>
-                    <div className="text-center p-2 rounded-lg bg-secondary/50">
-                      <p className="text-lg font-bold">{company.users_count || 0}</p>
-                      <p className="text-xs text-muted-foreground">Users</p>
+                    <div>
+                      <CardTitle className="text-lg">{company.name}</CardTitle>
+                      <p className="text-xs text-muted-foreground">{company.address}</p>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{company.contact_email}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs ${company.is_active ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
-                      {company.is_active ? 'Active' : 'Inactive'}
-                    </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewCompany(company.id); }}>
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                        <Settings className="w-4 h-4 mr-2" />
+                        Settings
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={(e) => e.stopPropagation()}>
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="text-center p-2 rounded-lg bg-secondary/50">
+                    <p className="text-lg font-bold">{company.cameras_count}</p>
+                    <p className="text-xs text-muted-foreground">Cameras</p>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                  <div className="text-center p-2 rounded-lg bg-secondary/50">
+                    <p className="text-lg font-bold">{company.alerts_today}</p>
+                    <p className="text-xs text-muted-foreground">Alerts</p>
+                  </div>
+                  <div className="text-center p-2 rounded-lg bg-secondary/50">
+                    <p className="text-lg font-bold">{company.users_count}</p>
+                    <p className="text-xs text-muted-foreground">Users</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{company.contact_email}</span>
+                  <span className={`px-2 py-1 rounded-full text-xs ${company.is_active ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
+                    {company.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </DashboardLayout>
   );
