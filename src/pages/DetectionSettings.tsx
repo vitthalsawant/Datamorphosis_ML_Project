@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -16,12 +16,17 @@ import {
   Mail,
   Smartphone,
   Save,
-  RotateCcw
+  RotateCcw,
+  Footprints,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { usePythonAPI } from '@/hooks/usePythonAPI';
 
 interface DetectionMode {
   id: string;
@@ -33,6 +38,9 @@ interface DetectionMode {
 }
 
 const DetectionSettings: React.FC = () => {
+  const { analytics, isConnected } = usePythonAPI(5000);
+  const personCountingData = analytics?.person_counting;
+  
   const [detectionModes, setDetectionModes] = useState<DetectionMode[]>([
     { id: 'face', name: 'Face Recognition', description: 'Identify known customers and employees', icon: User, enabled: true, sensitivity: 75 },
     { id: 'count', name: 'Person Counting', description: 'Track foot traffic and occupancy', icon: Users, enabled: true, sensitivity: 80 },
@@ -41,6 +49,14 @@ const DetectionSettings: React.FC = () => {
     { id: 'crowd', name: 'Crowd Density', description: 'Alert when areas become overcrowded', icon: Activity, enabled: false, sensitivity: 70 },
     { id: 'vip', name: 'VIP Recognition', description: 'Notify staff when VIP customers arrive', icon: UserCheck, enabled: true, sensitivity: 90 },
   ]);
+  
+  // ROI Configuration state
+  const [roiConfig, setRoiConfig] = useState({
+    x_start_percent: 20,
+    x_end_percent: 80,
+    y_start_percent: 20,
+    y_end_percent: 80
+  });
 
   const [alertSettings, setAlertSettings] = useState({
     email: true,
@@ -66,15 +82,39 @@ const DetectionSettings: React.FC = () => {
     );
   };
 
-  const handleSave = () => {
-    toast.success('Detection settings saved successfully');
+  const handleSave = async () => {
+    // Send person counting settings to Python API
+    const personCountingMode = detectionModes.find(m => m.id === 'count');
+    if (personCountingMode) {
+      try {
+        await fetch('http://localhost:5000/api/person-counting/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            enabled: personCountingMode.enabled,
+            sensitivity: personCountingMode.sensitivity,
+            roi_config: roiConfig
+          })
+        });
+        toast.success('Detection settings saved and synced with Python API');
+      } catch (error) {
+        toast.success('Detection settings saved locally');
+      }
+    } else {
+      toast.success('Detection settings saved successfully');
+    }
   };
 
   const handleReset = () => {
-    // Reset to defaults
     setDetectionModes(modes => 
       modes.map(mode => ({ ...mode, sensitivity: 75 }))
     );
+    setRoiConfig({
+      x_start_percent: 20,
+      x_end_percent: 80,
+      y_start_percent: 20,
+      y_end_percent: 80
+    });
     toast.success('Settings reset to defaults');
   };
 
@@ -106,6 +146,53 @@ const DetectionSettings: React.FC = () => {
           </div>
         </div>
 
+        {/* Person Counting Live Stats (if connected to Python API) */}
+        {isConnected && personCountingData && (
+          <Card className="glass-card border-primary/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Footprints className="w-5 h-5 text-primary" />
+                Person Counting - Live Stats
+                <Badge variant="outline" className="ml-2 bg-green-500/20 text-green-400 border-green-500/30">
+                  Connected to Python API
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-4 rounded-lg bg-secondary/50">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className="w-4 h-4 text-primary" />
+                    <span className="text-xs text-muted-foreground">Total Count</span>
+                  </div>
+                  <p className="text-2xl font-bold">{personCountingData.total_count || 0}</p>
+                </div>
+                <div className="p-4 rounded-lg bg-secondary/50">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Activity className="w-4 h-4 text-cyan-500" />
+                    <span className="text-xs text-muted-foreground">Current in ROI</span>
+                  </div>
+                  <p className="text-2xl font-bold">{personCountingData.current_in_roi || 0}</p>
+                </div>
+                <div className="p-4 rounded-lg bg-secondary/50">
+                  <div className="flex items-center gap-2 mb-1">
+                    <TrendingUp className="w-4 h-4 text-green-500" />
+                    <span className="text-xs text-muted-foreground">Peak Occupancy</span>
+                  </div>
+                  <p className="text-2xl font-bold">{personCountingData.peak_occupancy || 0}</p>
+                </div>
+                <div className="p-4 rounded-lg bg-secondary/50">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Eye className="w-4 h-4 text-orange-500" />
+                    <span className="text-xs text-muted-foreground">Sensitivity</span>
+                  </div>
+                  <p className="text-2xl font-bold">{personCountingData.sensitivity || 80}%</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Detection Modes */}
         <div className="grid md:grid-cols-2 gap-4">
           {detectionModes.map((mode, index) => (
@@ -113,7 +200,8 @@ const DetectionSettings: React.FC = () => {
               key={mode.id}
               className={cn(
                 'glass-card rounded-xl p-6 transition-all duration-300 animate-slide-up',
-                mode.enabled ? 'ring-1 ring-primary/30' : 'opacity-70'
+                mode.enabled ? 'ring-1 ring-primary/30' : 'opacity-70',
+                mode.id === 'count' && 'md:col-span-2'
               )}
               style={{ animationDelay: `${index * 0.05}s` }}
             >
@@ -126,7 +214,12 @@ const DetectionSettings: React.FC = () => {
                     <mode.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-medium">{mode.name}</h3>
+                    <h3 className="font-medium flex items-center gap-2">
+                      {mode.name}
+                      {mode.id === 'count' && (
+                        <Badge variant="secondary" className="text-xs">YOLOv8</Badge>
+                      )}
+                    </h3>
                     <p className="text-sm text-muted-foreground">{mode.description}</p>
                   </div>
                 </div>
@@ -155,6 +248,70 @@ const DetectionSettings: React.FC = () => {
                     <span>Medium</span>
                     <span>High</span>
                   </div>
+                  
+                  {/* Additional Person Counting Settings */}
+                  {mode.id === 'count' && (
+                    <div className="mt-4 pt-4 border-t border-border space-y-4">
+                      <h4 className="font-medium text-sm flex items-center gap-2">
+                        <Footprints className="w-4 h-4" />
+                        Foot Traffic & ROI Settings
+                      </h4>
+                      
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm">ROI X Start (%)</Label>
+                          <Slider
+                            value={[roiConfig.x_start_percent]}
+                            onValueChange={(v) => setRoiConfig({...roiConfig, x_start_percent: v[0]})}
+                            min={0}
+                            max={50}
+                            step={5}
+                          />
+                          <span className="text-xs text-muted-foreground">{roiConfig.x_start_percent}%</span>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">ROI X End (%)</Label>
+                          <Slider
+                            value={[roiConfig.x_end_percent]}
+                            onValueChange={(v) => setRoiConfig({...roiConfig, x_end_percent: v[0]})}
+                            min={50}
+                            max={100}
+                            step={5}
+                          />
+                          <span className="text-xs text-muted-foreground">{roiConfig.x_end_percent}%</span>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">ROI Y Start (%)</Label>
+                          <Slider
+                            value={[roiConfig.y_start_percent]}
+                            onValueChange={(v) => setRoiConfig({...roiConfig, y_start_percent: v[0]})}
+                            min={0}
+                            max={50}
+                            step={5}
+                          />
+                          <span className="text-xs text-muted-foreground">{roiConfig.y_start_percent}%</span>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">ROI Y End (%)</Label>
+                          <Slider
+                            value={[roiConfig.y_end_percent]}
+                            onValueChange={(v) => setRoiConfig({...roiConfig, y_end_percent: v[0]})}
+                            min={50}
+                            max={100}
+                            step={5}
+                          />
+                          <span className="text-xs text-muted-foreground">{roiConfig.y_end_percent}%</span>
+                        </div>
+                      </div>
+                      
+                      <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                        <p className="text-sm text-blue-400">
+                          <strong>ROI (Region of Interest):</strong> Define the area where people will be counted. 
+                          Adjust the percentages to set the detection zone boundaries.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

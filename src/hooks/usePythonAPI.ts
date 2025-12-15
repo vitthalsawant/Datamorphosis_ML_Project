@@ -3,12 +3,32 @@ import { useState, useEffect, useCallback } from 'react';
 // Configure your Python API endpoint here
 const API_BASE_URL = 'http://localhost:5000';
 
+export interface PersonCountingData {
+  enabled: boolean;
+  sensitivity: number;
+  total_count: number;
+  current_in_roi: number;
+  entries_today: number;
+  exits_today: number;
+  peak_occupancy: number;
+  peak_time: string | null;
+  hourly_foot_traffic: Record<string, number>;
+  roi_config: {
+    x_start_percent: number;
+    x_end_percent: number;
+    y_start_percent: number;
+    y_end_percent: number;
+  };
+}
+
 export interface AnalyticsData {
   total_visitors: number;
   male_count: number;
   female_count: number;
+  current_occupancy: number;
   hourly_data: Array<{ hour: string; visitors: number }>;
   age_distribution: Record<string, number>;
+  person_counting?: PersonCountingData;
   timestamp: string;
 }
 
