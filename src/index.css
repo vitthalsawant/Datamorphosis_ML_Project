@@ -108,6 +108,16 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', sans-serif;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  
+  /* Allow text selection in input fields and content areas */
+  input, textarea, [contenteditable], p, span, div:not([role="button"]) {
+    user-select: text;
+    -webkit-user-select: text;
   }
 
   h1, h2, h3, h4, h5, h6 {

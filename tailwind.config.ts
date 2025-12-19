@@ -86,12 +86,28 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
+          from: { 
+            height: "0",
+            opacity: "0",
+            transform: "scaleY(0)"
+          },
+          to: { 
+            height: "var(--radix-accordion-content-height)",
+            opacity: "1",
+            transform: "scaleY(1)"
+          },
         },
         "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
+          from: { 
+            height: "var(--radix-accordion-content-height)",
+            opacity: "1",
+            transform: "scaleY(1)"
+          },
+          to: { 
+            height: "0",
+            opacity: "0",
+            transform: "scaleY(0)"
+          },
         },
         "pulse-gold": {
           "0%, 100%": { boxShadow: "0 0 0 0 hsl(43 74% 53% / 0.4)" },

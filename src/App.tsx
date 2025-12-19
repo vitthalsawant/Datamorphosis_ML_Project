@@ -14,6 +14,7 @@ import CameraManagement from "./pages/CameraManagement";
 import DetectionSettings from "./pages/DetectionSettings";
 import AdminDashboard from "./pages/AdminDashboard";
 import CompanyDashboard from "./pages/CompanyDashboard";
+import SupabaseTest from "./pages/SupabaseTest";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,7 +24,12 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Landing />} />
@@ -31,6 +37,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/index" element={<Index />} />
+          <Route path="/supabase-test" element={<SupabaseTest />} />
           
           {/* Customer Routes */}
           <Route path="/customer" element={<CustomerDashboard />} />

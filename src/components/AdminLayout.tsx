@@ -9,9 +9,8 @@ import {
   ChevronDown,
   Menu,
   X,
-  BarChart3,
-  Activity,
-  Camera,
+  Users,
+  Building2,
   LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -24,26 +23,23 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface DashboardLayoutProps {
+interface AdminLayoutProps {
   children: ReactNode;
 }
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-  // Customer navigation items (this layout is for customers only)
-  const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/customer' },
-    { icon: BarChart3, label: 'Analytics', path: '/customer/analytics' },
-    { icon: Activity, label: 'Heatmaps', path: '/customer/heatmaps' },
-    { icon: Camera, label: 'Cameras', path: '/customer/cameras' },
-    { icon: Settings, label: 'Settings', path: '/customer/detection' },
+  const adminNavItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
+    { icon: Users, label: 'Customers', path: '/admin' },
+    { icon: Building2, label: 'Companies', path: '/admin' },
   ];
-  
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -74,7 +70,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto py-4 px-3">
             <ul className="space-y-1">
-              {navItems.map((item) => {
+              {adminNavItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <li key={item.path}>
@@ -121,7 +117,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           {/* Left Section */}
           <div className="hidden lg:flex items-center gap-4">
             <h1 className="font-display text-xl font-bold">
-              Customer Dashboard
+              Admin Dashboard
             </h1>
           </div>
 
@@ -139,19 +135,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 <Button variant="ghost" className="gap-2">
                   <div className="w-8 h-8 rounded-full gold-gradient flex items-center justify-center">
                     <span className="font-display text-sm font-bold text-background">
-                      {user?.fullName?.charAt(0).toUpperCase() || 'U'}
+                      {user?.fullName?.charAt(0).toUpperCase() || 'A'}
                     </span>
                   </div>
                   <span className="hidden md:block font-medium">
-                    {user?.fullName || 'Customer'}
+                    {user?.fullName || 'Admin'}
                   </span>
                   <ChevronDown className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <div className="px-2 py-1.5">
-                  <p className="font-medium">{user?.fullName || 'Customer'}</p>
-                  <p className="text-xs text-muted-foreground">{user?.email || 'user@example.com'}</p>
+                  <p className="font-medium">{user?.fullName || 'Admin User'}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email || 'admin@datamorphosis.in'}</p>
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
@@ -181,7 +177,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               </div>
               <nav>
                 <ul className="space-y-1">
-                  {navItems.map((item) => (
+                  {adminNavItems.map((item) => (
                     <li key={item.path}>
                       <Link
                         to={item.path}
@@ -213,4 +209,4 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   );
 };
 
-export default DashboardLayout;
+export default AdminLayout;

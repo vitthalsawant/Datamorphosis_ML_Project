@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { Eye, EyeOff, Mail, Lock, Loader2, Brain } from 'lucide-react';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -20,12 +20,37 @@ const Login: React.FC = () => {
   
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log('Login page: User authenticated, redirecting...', { 
+        role: user.role, 
+        email: user.email,
+        isAuthenticated,
+        hasUser: !!user
+      });
+      
+      const redirectPath = {
+        admin: '/admin',
+        employee: '/employee',
+        customer: '/customer',
+      }[user.role as string] || '/customer';
+      
+      console.log('Redirecting to:', redirectPath);
+      setIsSubmitting(false); // Reset submitting state before redirect
+      navigate(redirectPath, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email';
     }
     
     if (!formData.password) {
@@ -41,31 +66,41 @@ const Login: React.FC = () => {
     
     if (!validateForm()) return;
     
-    const success = await login({
-      email: formData.email,
-      password: formData.password,
-      rememberMe: formData.rememberMe,
-    });
+    setIsSubmitting(true);
+    setErrors({});
     
-    if (success) {
-      // Redirect based on role (handled by the login function's toast and context update)
-      const storedUser = localStorage.getItem('datamorphosis_user') || sessionStorage.getItem('datamorphosis_user');
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        const redirectPath = {
-          admin: '/admin',
-          employee: '/employee',
-          customer: '/customer',
-        }[user.role as string];
-        navigate(redirectPath || '/');
+    try {
+      const success = await login({
+        email: formData.email,
+        password: formData.password,
+        rememberMe: formData.rememberMe,
+      });
+      
+      if (success) {
+        // Login successful - redirect will happen via useEffect
+        // Don't reset isSubmitting here, let redirect happen
+        console.log('Login successful, waiting for redirect...');
+      } else {
+        // Login failed - reset submitting state
+        setIsSubmitting(false);
       }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setIsSubmitting(false);
+      setErrors({ 
+        general: error.message || 'An unexpected error occurred. Please try again.' 
+      });
     }
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
   };
 
@@ -84,16 +119,6 @@ const Login: React.FC = () => {
             Access your personalized dashboard and continue your journey 
             with Datamorphosis.
           </p>
-          
-          {/* Demo Credentials */}
-          <div className="mt-12 p-6 rounded-xl bg-background/5 border border-border/20 text-left">
-            <h3 className="text-sm font-medium text-primary mb-3">Demo Credentials</h3>
-            <div className="space-y-2 text-sm text-muted-foreground/70">
-              <p><span className="text-primary-foreground">Admin:</span> admin@datamorphosis.in</p>
-              <p><span className="text-primary-foreground">Customer:</span> customer@datamorphosis.in</p>
-              <p className="mt-2 text-xs">Password: password123</p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -109,7 +134,7 @@ const Login: React.FC = () => {
             <p className="text-muted-foreground">Enter your credentials to access your dashboard</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
@@ -117,11 +142,15 @@ const Login: React.FC = () => {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="name@example.com"
                   className="pl-11"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
+                  disabled={isSubmitting}
+                  aria-required="true"
                 />
               </div>
               {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
@@ -139,18 +168,25 @@ const Login: React.FC = () => {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   placeholder="Enter your password"
                   className="pl-11"
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
+                  disabled={isSubmitting}
+                  aria-required="true"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  disabled={isSubmitting}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  title={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
                 </button>
               </div>
               {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
@@ -162,15 +198,23 @@ const Login: React.FC = () => {
                 id="remember"
                 checked={formData.rememberMe}
                 onCheckedChange={(checked) => handleInputChange('rememberMe', checked as boolean)}
+                disabled={isSubmitting}
               />
               <Label htmlFor="remember" className="text-sm cursor-pointer">
                 Remember me for 30 days
               </Label>
             </div>
 
+            {/* General Error */}
+            {errors.general && (
+              <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
+                {errors.general}
+              </div>
+            )}
+
             {/* Submit */}
-            <Button type="submit" variant="gold" size="lg" className="w-full" disabled={isLoading}>
-              {isLoading ? (
+            <Button type="submit" variant="gold" size="lg" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                   Signing In...
@@ -187,15 +231,6 @@ const Login: React.FC = () => {
               Create account
             </Link>
           </p>
-
-          {/* Mobile Demo Credentials */}
-          <div className="lg:hidden mt-8 p-4 rounded-xl bg-secondary/50 border border-border">
-            <h3 className="text-sm font-medium text-primary mb-2">Demo Credentials</h3>
-            <p className="text-xs text-muted-foreground">
-              Admin: admin@datamorphosis.in | Customer: customer@datamorphosis.in
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">Password: password123</p>
-          </div>
         </div>
       </div>
     </div>

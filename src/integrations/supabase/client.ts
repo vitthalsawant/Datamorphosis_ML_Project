@@ -5,13 +5,79 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+// Validate environment variables
+if (!SUPABASE_URL) {
+  console.error('❌ Missing VITE_SUPABASE_URL environment variable');
+}
+
+if (!SUPABASE_PUBLISHABLE_KEY) {
+  console.error('❌ Missing VITE_SUPABASE_PUBLISHABLE_KEY environment variable');
+}
+
+// Validate URL format
+if (SUPABASE_URL && !SUPABASE_URL.startsWith('http://') && !SUPABASE_URL.startsWith('https://')) {
+  console.warn('⚠️ SUPABASE_URL should start with http:// or https://');
+}
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
+// Create client - will use empty strings if env vars are missing (will fail gracefully)
+export const supabase = createClient<Database>(
+  SUPABASE_URL || 'https://placeholder.supabase.co',
+  SUPABASE_PUBLISHABLE_KEY || 'placeholder-key',
+  {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    }
   }
-});
+);
+
+// Connection test utility
+export const testSupabaseConnection = async (): Promise<{
+  success: boolean;
+  error?: string;
+  details?: any;
+}> => {
+  try {
+    // Test connection by fetching a simple query
+    const { data, error } = await supabase.from('activities').select('count').limit(1);
+    
+    if (error) {
+      // If activities table doesn't exist, try another simple query
+      const { error: healthError } = await supabase.rpc('get_user_role', { _user_id: 'test' });
+      
+      if (healthError && healthError.code !== 'PGRST116') {
+        return {
+          success: false,
+          error: healthError.message,
+          details: healthError
+        };
+      }
+    }
+    
+    return {
+      success: true,
+      details: {
+        url: SUPABASE_URL,
+        hasKey: !!SUPABASE_PUBLISHABLE_KEY,
+        keyLength: SUPABASE_PUBLISHABLE_KEY?.length || 0
+      }
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || 'Unknown error occurred',
+      details: err
+    };
+  }
+};
+
+// Log connection status on import (only in development)
+if (import.meta.env.DEV) {
+  console.log('🔌 Supabase Client Initialized');
+  console.log('📍 URL:', SUPABASE_URL ? '✅ Set' : '❌ Missing');
+  console.log('🔑 Key:', SUPABASE_PUBLISHABLE_KEY ? `✅ Set (${SUPABASE_PUBLISHABLE_KEY.length} chars)` : '❌ Missing');
+}

@@ -1,24 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataMorphosisLogo } from '@/components/DataMorphosisLogo';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserRole } from '@/types/auth';
-import { Eye, EyeOff, User, Mail, Phone, Shield, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, User, Mail, Phone, Loader2, Shield } from 'lucide-react';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
-  const { register, isLoading } = useAuth();
+  const { register, user, isAuthenticated } = useAuth();
   
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     phone: '',
-    role: '' as UserRole | '',
     password: '',
     confirmPassword: '',
     acceptTerms: false,
@@ -27,6 +24,20 @@ const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const redirectPath = {
+        admin: '/admin',
+        employee: '/employee',
+        customer: '/customer',
+      }[user.role as string] || '/customer';
+      
+      navigate(redirectPath, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -45,10 +56,6 @@ const Register: React.FC = () => {
       newErrors.phone = 'Phone number is required';
     } else if (!/^\+?[\d\s-]{10,}$/.test(formData.phone)) {
       newErrors.phone = 'Please enter a valid phone number';
-    }
-    
-    if (!formData.role) {
-      newErrors.role = 'Please select a role';
     }
     
     if (!formData.password) {
@@ -74,30 +81,40 @@ const Register: React.FC = () => {
     
     if (!validateForm()) return;
     
-    const success = await register({
-      fullName: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      role: formData.role as UserRole,
-      password: formData.password,
-      confirmPassword: formData.confirmPassword,
-      acceptTerms: formData.acceptTerms,
-    });
+    setIsSubmitting(true);
+    setErrors({});
     
-    if (success) {
-      const redirectPath = {
-        admin: '/admin',
-        employee: '/employee',
-        customer: '/customer',
-      }[formData.role as UserRole];
-      navigate(redirectPath);
+    try {
+      const success = await register({
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        role: 'customer',
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        acceptTerms: formData.acceptTerms,
+      });
+      
+      if (!success) {
+        setIsSubmitting(false);
+      }
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      setIsSubmitting(false);
+      setErrors({ 
+        general: error.message || 'Registration failed. Please try again.' 
+      });
     }
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
   };
 
@@ -115,7 +132,7 @@ const Register: React.FC = () => {
             <p className="text-muted-foreground">Join the Datamorphosis platform</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             {/* Full Name */}
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
@@ -123,10 +140,15 @@ const Register: React.FC = () => {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="fullName"
+                  name="fullName"
+                  type="text"
+                  autoComplete="name"
                   placeholder="Enter your full name"
                   className="pl-11"
                   value={formData.fullName}
                   onChange={(e) => handleInputChange('fullName', e.target.value)}
+                  disabled={isSubmitting}
+                  aria-required="true"
                 />
               </div>
               {errors.fullName && <p className="text-sm text-destructive">{errors.fullName}</p>}
@@ -139,11 +161,15 @@ const Register: React.FC = () => {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="name@example.com"
                   className="pl-11"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
+                  disabled={isSubmitting}
+                  aria-required="true"
                 />
               </div>
               {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
@@ -156,32 +182,18 @@ const Register: React.FC = () => {
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="phone"
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
                   placeholder="+91 9876543210"
                   className="pl-11"
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
+                  disabled={isSubmitting}
+                  aria-required="true"
                 />
               </div>
               {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
-            </div>
-
-            {/* Role */}
-            <div className="space-y-2">
-              <Label>Select Role</Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value) => handleInputChange('role', value)}
-              >
-                <SelectTrigger className="h-11">
-                  <Shield className="w-5 h-5 text-muted-foreground mr-2" />
-                  <SelectValue placeholder="Choose your role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="customer">Customer (Company)</SelectItem>
-                  <SelectItem value="admin">Admin (Datamorphosis)</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.role && <p className="text-sm text-destructive">{errors.role}</p>}
             </div>
 
             {/* Password */}
@@ -190,17 +202,24 @@ const Register: React.FC = () => {
               <div className="relative">
                 <Input
                   id="password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   placeholder="Create a strong password"
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
+                  disabled={isSubmitting}
+                  aria-required="true"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  disabled={isSubmitting}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  title={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
                 </button>
               </div>
               {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
@@ -212,17 +231,24 @@ const Register: React.FC = () => {
               <div className="relative">
                 <Input
                   id="confirmPassword"
+                  name="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   placeholder="Confirm your password"
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                  disabled={isSubmitting}
+                  aria-required="true"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  disabled={isSubmitting}
+                  aria-label={showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'}
+                  title={showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'}
                 >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
                 </button>
               </div>
               {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
@@ -234,6 +260,7 @@ const Register: React.FC = () => {
                 id="terms"
                 checked={formData.acceptTerms}
                 onCheckedChange={(checked) => handleInputChange('acceptTerms', checked as boolean)}
+                disabled={isSubmitting}
               />
               <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
                 I agree to the <span className="text-primary underline">Terms & Conditions</span> and <span className="text-primary underline">Privacy Policy</span>
@@ -241,9 +268,16 @@ const Register: React.FC = () => {
             </div>
             {errors.acceptTerms && <p className="text-sm text-destructive">{errors.acceptTerms}</p>}
 
+            {/* General Error */}
+            {errors.general && (
+              <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
+                {errors.general}
+              </div>
+            )}
+
             {/* Submit */}
-            <Button type="submit" variant="gold" size="lg" className="w-full" disabled={isLoading}>
-              {isLoading ? (
+            <Button type="submit" variant="gold" size="lg" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                   Creating Account...
