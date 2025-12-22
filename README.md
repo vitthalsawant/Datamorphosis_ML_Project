@@ -81,6 +81,9 @@ This unified service will:
 - The camera will start automatically
 - ROI (Region of Interest) must be configured in the dashboard before counting begins
 - All output goes to the web dashboard (no local windows)
+- ✅ Run headless (no GUI windows)
+
+**Note:** This can run simultaneously with the person counting service using the same camera feed.
 
 ### Step 5: Start the Frontend Dashboard
 
@@ -360,13 +363,13 @@ Then:
 
 **Start everything:**
 ```bash
-# Terminal 1
+# Terminal 1: API Server
 cd python-algorithm && python api_server.py
 
-# Terminal 2  
+# Terminal 2: Person Counting & Gender Classification
 cd python-algorithm && python people_counter_api.py
 
-# Terminal 3
+# Terminal 3: Frontend Dashboard
 npm run dev
 ```
 

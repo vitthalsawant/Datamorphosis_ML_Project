@@ -158,13 +158,27 @@ class GenderClassificationService:
             
             self.is_running = True
             frame_count = 0
+            processed_frame_count = 0
+            start_time = time.time()
             last_api_update = 0
-            
+
             while self.is_running:
                 ret, frame = self.camera.read()
                 if not ret:
                     print("[WARNING] Failed to grab frame")
                     break
+
+                frame_count += 1
+
+                # Frame skipping for high FPS to maintain stability
+                current_time = time.time()
+                if processed_frame_count > 10:  # Wait for stable FPS measurement
+                    fps = processed_frame_count / (current_time - start_time)
+                    if fps > config.FRAME_SKIP_THRESHOLD:
+                        # Skip frames to maintain stability
+                        skip_frames = int(fps / config.MAX_FPS)
+                        if frame_count % (skip_frames + 1) != 0:
+                            continue
                 
                 # Flip frame horizontally for mirror effect
                 frame = cv2.flip(frame, 1)
@@ -177,63 +191,120 @@ class GenderClassificationService:
                     self.face_tracking_buffer.pop(0)
                 
                 current_frame_faces = []
-                
+                valid_faces = []
+
+                # First pass: collect valid faces
                 for (x, y, w, h) in faces:
                     # Extract face ROI
                     face_roi = frame[y:y+h, x:x+w]
-                    
+
                     # Skip if face ROI is too small
                     if face_roi.size == 0 or w < config.MIN_FACE_SIZE[0] or h < config.MIN_FACE_SIZE[1]:
                         continue
-                    
-                    # Calculate face center
-                    face_center = self.calculate_face_center(x, y, w, h)
-                    
-                    # Check if this is a new person
-                    is_new, existing_gender = self.is_new_person(face_center)
-                    
+
+                    valid_faces.append((x, y, w, h, face_roi))
+
+                # Batch process faces for better performance
+                if valid_faces:
                     try:
-                        # Preprocess and predict
-                        face_array = self.preprocess_face(face_roi)
-                        prediction = self.model.predict(face_array, verbose=0)
-                        gender_idx = np.argmax(prediction[0])
-                        confidence = prediction[0][gender_idx]
-                        
-                        gender = config.INT2LABELS[gender_idx]
-                        
-                        # Add to current frame tracking
-                        current_frame_faces.append({
-                            'center': face_center,
-                            'gender': gender,
-                            'bbox': (x, y, w, h),
-                            'confidence': confidence
-                        })
-                        
-                        # If new person, count them
-                        # Note: Generator uses alphabetical order: female=0, male=1
-                        if is_new:
-                            self.total_people_counted += 1
-                            
-                            if gender_idx == 1:  # MALE (index 1 from alphabetical order)
-                                self.male_count += 1
-                            elif gender_idx == 0:  # FEMALE (index 0 from alphabetical order)
-                                self.female_count += 1
-                            
-                            # Add to tracked people
-                            self.tracked_people.append({
-                                'center': face_center,
-                                'gender': gender,
-                                'bbox': (x, y, w, h),
-                                'confidence': confidence,
-                                'first_seen': frame_count
-                            })
-                            
-                            print(f"[INFO] Frame {frame_count}: New {gender} detected! (Confidence: {confidence:.2f})")
-                            print(f"[INFO] Total - Male: {self.male_count}, Female: {self.female_count}, Total: {self.total_people_counted}")
-                        
+                        # Prepare batch of face arrays
+                        face_arrays = []
+                        face_info = []
+
+                        for x, y, w, h, face_roi in valid_faces:
+                            face_array = self.preprocess_face(face_roi)
+                            face_arrays.append(face_array[0])  # Remove batch dimension
+                            face_info.append((x, y, w, h))
+
+                        # Batch prediction
+                        if face_arrays:
+                            batch_array = np.array(face_arrays)
+                            predictions = self.model.predict(batch_array, verbose=0)
+
+                            # Process each prediction
+                            for i, (x, y, w, h) in enumerate(face_info):
+                                prediction = predictions[i]
+                                gender_idx = np.argmax(prediction)
+                                confidence = prediction[gender_idx]
+                                gender = config.INT2LABELS[gender_idx]
+
+                                # Calculate face center
+                                face_center = self.calculate_face_center(x, y, w, h)
+
+                                # Check if this is a new person
+                                is_new, existing_gender = self.is_new_person(face_center)
+
+                                # Add to current frame tracking
+                                current_frame_faces.append({
+                                    'center': face_center,
+                                    'gender': gender,
+                                    'bbox': (x, y, w, h),
+                                    'confidence': confidence
+                                })
+
+                                # If new person, count them
+                                if is_new:
+                                    self.total_people_counted += 1
+
+                                    if gender_idx == 1:  # MALE (index 1 from alphabetical order)
+                                        self.male_count += 1
+                                    elif gender_idx == 0:  # FEMALE (index 0 from alphabetical order)
+                                        self.female_count += 1
+
+                                    # Add to tracked people
+                                    self.tracked_people.append({
+                                        'center': face_center,
+                                        'gender': gender,
+                                        'bbox': (x, y, w, h),
+                                        'confidence': confidence,
+                                        'first_seen': frame_count
+                                    })
+
+                                    print(f"[INFO] Frame {frame_count}: New {gender} detected! (Confidence: {confidence:.2f})")
+                                    print(f"[INFO] Total - Male: {self.male_count}, Female: {self.female_count}, Total: {self.total_people_counted}")
+
                     except Exception as e:
-                        print(f"[ERROR] Error processing face: {e}")
-                        continue
+                        print(f"[ERROR] Error in batch processing: {e}")
+                        # Fallback to individual processing if batch fails
+                        for x, y, w, h, face_roi in valid_faces:
+                            try:
+                                face_center = self.calculate_face_center(x, y, w, h)
+                                is_new, existing_gender = self.is_new_person(face_center)
+
+                                face_array = self.preprocess_face(face_roi)
+                                prediction = self.model.predict(face_array, verbose=0)
+                                gender_idx = np.argmax(prediction[0])
+                                confidence = prediction[0][gender_idx]
+                                gender = config.INT2LABELS[gender_idx]
+
+                                current_frame_faces.append({
+                                    'center': face_center,
+                                    'gender': gender,
+                                    'bbox': (x, y, w, h),
+                                    'confidence': confidence
+                                })
+
+                                if is_new:
+                                    self.total_people_counted += 1
+                                    if gender_idx == 1:
+                                        self.male_count += 1
+                                    elif gender_idx == 0:
+                                        self.female_count += 1
+
+                                    self.tracked_people.append({
+                                        'center': face_center,
+                                        'gender': gender,
+                                        'bbox': (x, y, w, h),
+                                        'confidence': confidence,
+                                        'first_seen': frame_count
+                                    })
+
+                                    print(f"[INFO] Frame {frame_count}: New {gender} detected! (Confidence: {confidence:.2f})")
+                                    print(f"[INFO] Total - Male: {self.male_count}, Female: {self.female_count}, Total: {self.total_people_counted}")
+
+                            except Exception as e2:
+                                print(f"[ERROR] Error processing individual face: {e2}")
+                                continue
                 
                 # Update tracking buffer
                 self.face_tracking_buffer.extend(current_frame_faces)
@@ -251,11 +322,14 @@ class GenderClassificationService:
                                 timeout=0.1)
                 except:
                     pass
-                
-                frame_count += 1
-                
-                # Small delay to prevent overwhelming the system
-                time.sleep(0.03)  # ~30 FPS
+
+                processed_frame_count += 1
+
+                # Calculate and display FPS every 30 frames
+                if processed_frame_count % 30 == 0 and processed_frame_count > 0:
+                    current_time = time.time()
+                    fps = processed_frame_count / (current_time - start_time)
+                    print(f"[INFO] Current FPS: {fps:.1f}")
                 
         except KeyboardInterrupt:
             print("\n[INFO] Stopping gender classification service...")

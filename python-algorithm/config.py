@@ -48,15 +48,19 @@ SUBSET_PERCENTAGE = 0.2  # Use only 20% of data if USE_SMALL_DATASET is True
 # Use generator-based training (recommended for large datasets)
 USE_GENERATOR_TRAINING = True  # Uses ImageDataGenerator - loads images on-demand
 
-# Face detection configuration
+# Face detection configuration (optimized for speed)
 FACE_CASCADE_PATH = None  # Will use cv2.data.haarcascades default
 MIN_FACE_SIZE = (30, 30)
 SCALE_FACTOR = 1.1
-MIN_NEIGHBORS = 5
+MIN_NEIGHBORS = 3  # Reduced from 5 for faster detection
 
 # Tracking configuration
 TRACKING_THRESHOLD = 50  # Distance threshold for same person
 TRACKING_FRAMES = 10  # Frames to remember face positions
+
+# Performance optimization
+MAX_FPS = 60  # Maximum FPS to maintain stability
+FRAME_SKIP_THRESHOLD = 45  # Start skipping frames above this FPS
 
 # Create necessary directories
 os.makedirs(MODELS_DIR, exist_ok=True)

@@ -13,6 +13,7 @@ import base64
 import io
 import numpy as np
 from PIL import Image
+import os
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes

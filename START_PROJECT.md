@@ -19,12 +19,12 @@ python api_server.py
 ```
 Server will start on: `http://localhost:5000`
 
-#### Terminal 2: YOLOv8 Detection Script (Optional - for live video)
+#### Terminal 2: Person Counting & Gender Classification
 ```bash
 cd python-algorithm
 python people_counter_api.py
 ```
-This will start camera detection and send data to the API server.
+This will start camera detection for person counting and gender classification.
 
 #### Terminal 3: Frontend Development Server
 ```bash
@@ -66,6 +66,7 @@ Datamorphosis_ML_Project-1/
 
 ✅ **Live Camera Feeds** - View real-time video streams
 ✅ **Person Counting** - AI-powered people detection and counting
+✅ **Gender Classification** - Real-time gender classification
 ✅ **Analytics Dashboard** - View visitor statistics and analytics
 ✅ **Camera Management** - Manage multiple camera feeds
 ✅ **Detection Settings** - Configure detection sensitivity and ROI
