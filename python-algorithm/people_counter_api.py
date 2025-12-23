@@ -565,4 +565,7 @@ if __name__ == '__main__':
     
     # Auto-start camera without user input
     print("\n[INFO] Opening camera...")
-    run_detection()
+    try:
+        run_detection()
+    except KeyboardInterrupt:
+        print("\n[INFO] Detection service stopped by user (Ctrl+C).")
